@@ -20,8 +20,8 @@ func InitRouter() {
 
 	au := router.Group("/api/v1/auth")
 	{
-		au.POST("/login", auth.Login)
-		au.POST("/register", auth.Register)
+		au.POST("/sessions", auth.Sessions)
+		au.POST("/users", auth.Users)
 	}
 
 	order := router.Group("api/v1/order")

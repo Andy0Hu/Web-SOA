@@ -21,7 +21,7 @@ type LoginRes struct {
 	User
 }
 
-func Login(c *gin.Context) {
+func Sessions(c *gin.Context) {
 	var u User
 	if err := c.ShouldBind(&u); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -46,7 +46,7 @@ func Login(c *gin.Context) {
 	})
 }
 
-func Register(c *gin.Context) {
+func Users(c *gin.Context) {
 	var u User
 	if err := c.ShouldBind(&u); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
