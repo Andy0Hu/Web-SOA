@@ -1,11 +1,11 @@
 <template>
-  <div>
-    <div>
-      <router-link to="/">Login</router-link>|
-      <router-link to="/register">Register</router-link>
-    </div>
+  <div id="app">
     <router-view />
   </div>
 </template>
 
-<style lang="stylus"></style>
+<style>
+#app {
+  height: 100%;
+}
+</style>
