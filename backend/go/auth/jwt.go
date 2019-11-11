@@ -14,7 +14,7 @@ type JWT struct {
 }
 
 type CustomClaims struct {
-	Id   int    `json:"id"`
+	Id   string `json:"id"`
 	Name string `json:"name"`
 	jwt.StandardClaims
 }
@@ -65,7 +65,7 @@ func (j *JWT) ParseToken(tokenString string) (*CustomClaims, error) {
 	return nil, TokenInvalid
 }
 
-func (j *JWT) RefreshToken(tokenString string) (string, error) {
+func (j *JWT) TokenRefresh(tokenString string) (string, error) {
 	jwt.TimeFunc = func() time.Time {
 		return time.Unix(0, 0)
 	}
