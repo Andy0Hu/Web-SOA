@@ -14,7 +14,7 @@ type JWT struct {
 }
 
 type CustomClaims struct {
-	Id   int    `json:"id"`
+	Id   string `json:"id"`
 	Name string `json:"name"`
 	jwt.StandardClaims
 }
