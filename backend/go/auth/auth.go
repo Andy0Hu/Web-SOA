@@ -69,6 +69,32 @@ func Users(c *gin.Context) {
 	})
 }
 
+func TokenRefresh(c *gin.Context, user User) {
+	j := &JWT{
+		[]byte("WEBSOA"),
+	}
+	tokenToRefresh := c.GetHeader("token")
+	token, err := j.TokenRefresh(tokenToRefresh)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  -1,
+			"message": err.Error(),
+		})
+	}
+	logrus.Info(token)
+
+	data := LoginRes{
+		Token: token,
+		User:  user,
+	}
+	c.JSON(200, gin.H{
+		"status":  0,
+		"message": "TokenRefresh Succeeded!",
+		"data":    data,
+	})
+
+}
+
 func checkPasswd(id int, passwd string) (string, error) {
 	if id == 111 && passwd == "222" {
 		return "333", nil
