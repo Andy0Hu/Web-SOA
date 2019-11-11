@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="container-login">
     <a-layout class="container-login">
       <a-layout-content class="main">
-        <div>EXPRESS</div>
+        <div class="login-title">Express</div>
         <a-form class="user-layout-login" @submit="handleSubmit" :form="form">
           <a-form-item>
             <a-input
@@ -57,16 +57,21 @@ export default {
 };
 </script>
 
-<style lang="less" scoped>
+<style lang="less">
 .container-login {
   height: 100%;
   width: 100%;
-  overflow: hidden;
   .main {
     min-width: 260px;
     width: 368px;
     margin: auto;
-    margin-top: 10px;
+    margin-top: 15%;
+    .login-title {
+      text-align: center;
+      margin: auto;
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
   }
   .user-layout-login {
     label {
