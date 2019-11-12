@@ -2,6 +2,7 @@ package main
 
 import (
 	"express/auth"
+	"express/order"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,10 +25,10 @@ func InitRouter() {
 		au.POST("/users", auth.Users)
 	}
 
-	order := router.Group("api/v1/order")
-	order.Use(auth.JWTAuth())
+	or := router.Group("api/v1/order")
+	or.Use(auth.JWTAuth())
 	{
-		order.GET("/test", func(c *gin.Context) {
+		or.GET("/test", func(c *gin.Context) {
 			claims := c.MustGet("claims").(*auth.CustomClaims)
 			if claims != nil {
 				c.JSON(http.StatusOK, gin.H{
@@ -37,6 +38,7 @@ func InitRouter() {
 				})
 			}
 		})
+		or.GET("/AllOrders", order.AllOrders)
 	}
 
 	router.Run(":8080")
