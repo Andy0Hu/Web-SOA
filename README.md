@@ -32,7 +32,7 @@ Version 4.2.1
 
 This part is coded with `Golang`. We use JWT as a way for securely transmitting information between parties.
 
-the database used is mongoDB.
+The database used is mongoDB.
 
 1. Login
 
@@ -54,3 +54,27 @@ the database used is mongoDB.
 
       Function binds id, password and username inthe Body of request. It checks whether this id is in the database and decides to give the permission to the user who is going to register, then insert the user messages to the database.
 
+#### order
+
+This part is coded with `Golang`, before registering routers we add a middleware to guarantee permission checks. If no jwt in the head of the request, user can't call the APIs.
+
+The database used is mongoDB.
+
+1. All Orders
+
+   1. method: **GET**
+
+   2. url: `api/v1/order/allOrders`
+
+   3. intro:
+
+      With the token and Id provided by requester, the backend find the collection named "order", the document is as following:
+
+      ```go
+      type AOrders struct {
+      	User  string   `form:"user" json:"user"`
+      	Order []Orders `form:"order" json:"order"`
+      }
+      ```
+
+      and responde the request.
