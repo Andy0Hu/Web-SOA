@@ -2,15 +2,21 @@ package order
 
 import (
 	"context"
-	"net/http"
+	"errors"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+type Service interface {
+	AllOrders(id string) (interface{}, error)
+}
+
+type OrderService struct {
+}
 
 var Client *mongo.Client
 
@@ -26,51 +32,27 @@ type Orders struct {
 	Signed   bool   `form:"signed" json:"signed"`
 }
 
-type User struct {
-	Id string `form:"id" json:"id"`
-}
-
 type AOrders struct {
 	User  string   `form:"user" json:"user"`
 	Order []Orders `form:"order" json:"order"`
 }
 
-func AllOrders(c *gin.Context) {
-	logrus.Info("ALL_ORDERS")
-	var u User
-	if err := c.ShouldBind(&u); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  -1,
-			"message": err.Error(),
-		})
-		return
-	}
-	logrus.Info("user: ", u)
+func (s OrderService) AllOrders(id string) (interface{}, error) {
+	logrus.Info("user: ", id)
 
-	if len(u.Id) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  -1,
-			"message": "empty input",
-		})
-		return
+	if len(id) == 0 {
+		return nil, errors.New("no id specified")
 	}
 	collection := Client.Database("express").Collection("orders")
 	var findRes AOrders
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	err := collection.FindOne(ctx, bson.M{"user": u.Id}).Decode(&findRes)
+	err := collection.FindOne(ctx, bson.M{"user": id}).Decode(&findRes)
 	if err != nil {
 		logrus.Info("fetch error", err)
-		c.JSON(200, gin.H{
-			"status":  -1,
-			"message": "fetch errors",
-		})
-		return
+		return nil, errors.New("fetch data error")
 	}
 	logrus.Info(findRes)
 	var all []Orders
 	all = findRes.Order
-	c.JSON(200, gin.H{
-		"status":  0,
-		"message": all,
-	})
+	return all, nil
 }

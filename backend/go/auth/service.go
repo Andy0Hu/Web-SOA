@@ -3,17 +3,23 @@ package auth
 import (
 	"context"
 	"errors"
-	"net/http"
 	"time"
 
+	jwtgo "github.com/dgrijalva/jwt-go"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	jwtgo "github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
+
+// Service Define a service interface
+type Service interface {
+	Login(id, pwd string) (string, error)
+	Register(id, pwd, username string) error
+}
+
+type AuthService struct {
+}
 
 var Client *mongo.Client
 
@@ -33,66 +39,41 @@ type LoginRes struct {
 	User
 }
 
-func Sessions(c *gin.Context) {
-	var u User
-	if err := c.ShouldBind(&u); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  -1,
-			"message": err.Error(),
-		})
-		return
+func (s AuthService) Login(id, pwd string) (string, error) {
+	u := User{
+		Id:       id,
+		Password: pwd,
 	}
-	if len(u.Id) == 0 || len(u.Password) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  -1,
-			"message": "empty input",
-		})
-		return
+	if len(id) == 0 || len(pwd) == 0 {
+		return "", errors.New("empty id or password")
 	}
 
-	name, err := checkPasswd(u.Id, u.Password)
-	u.Username = name
+	var token string
+	name, err := checkPasswd(id, pwd)
 	if err != nil {
 		logrus.Info(err)
-		c.JSON(200, gin.H{
-			"status":  -1,
-			"message": "Check Password error: ",
-		})
+		return "", errors.New("password not match")
 	} else {
-		genToken(c, u)
+		u.Username = name
+		token = genToken(u)
 	}
 
-	c.JSON(200, gin.H{
-		"status": 0,
-		"name":   name,
-	})
+	return token, nil
 }
 
-func Users(c *gin.Context) {
-	var u User
-	if err := c.ShouldBind(&u); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  -1,
-			"message": err.Error(),
-		})
-		return
+func (s AuthService) Register(id, pwd, username string) error {
+	u := User{
+		Id:       id,
+		Password: pwd,
+		Username: username,
 	}
-
 	if len(u.Id) == 0 || len(u.Username) == 0 || len(u.Password) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  -1,
-			"message": "empty input",
-		})
-		return
+		return errors.New("empty input")
 	}
 	err := checkExist(u.Id)
 	if err != nil {
 		logrus.Info("exists: ", err)
-		c.JSON(200, gin.H{
-			"status":  -1,
-			"message": "has exists",
-		})
-		return
+		return errors.New("the user has existed")
 	}
 
 	collection := Client.Database("express").Collection("user")
@@ -106,44 +87,11 @@ func Users(c *gin.Context) {
 
 	if err != nil {
 		logrus.Info("insert new user error\n", err)
-		c.JSON(200, gin.H{
-			"status":  -1,
-			"message": "register failed!",
-		})
-		return
+		return errors.New("register failed!")
 	}
 
 	logrus.Info("insert ID: ", res.InsertedID)
-	c.JSON(200, gin.H{
-		"status":  0,
-		"message": "register succeeded!",
-	})
-}
-
-func TokenRefresh(c *gin.Context, user User) {
-	j := &JWT{
-		[]byte("WEBSOA"),
-	}
-	tokenToRefresh := c.GetHeader("token")
-	token, err := j.TokenRefresh(tokenToRefresh)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  -1,
-			"message": err.Error(),
-		})
-	}
-	logrus.Info(token)
-
-	data := LoginRes{
-		Token: token,
-		User:  user,
-	}
-	c.JSON(200, gin.H{
-		"status":  0,
-		"message": "TokenRefresh Succeeded!",
-		"data":    data,
-	})
-
+	return nil
 }
 
 func checkPasswd(id string, passwd string) (string, error) {
@@ -176,10 +124,8 @@ func checkExist(id string) error {
 	return nil
 }
 
-func genToken(c *gin.Context, user User) {
-	j := &JWT{
-		[]byte("WEBSOA"),
-	}
+func genToken(user User) string {
+	j := NewJWT()
 	claims := CustomClaims{
 		user.Id,
 		user.Username,
@@ -193,21 +139,9 @@ func genToken(c *gin.Context, user User) {
 	token, err := j.CreateToken(claims)
 
 	if err != nil {
-		c.JSON(200, gin.H{
-			"status":  -1,
-			"message": err.Error(),
-		})
 	}
 
 	logrus.Info(token)
 
-	data := LoginRes{
-		Token: token,
-		User:  user,
-	}
-	c.JSON(200, gin.H{
-		"status":  0,
-		"message": "Login Succeeded!",
-		"data":    data,
-	})
+	return token
 }

@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 type JWT struct {
@@ -35,6 +33,10 @@ func NewJWT() *JWT {
 
 func GetSignKey() string {
 	return SignKey
+}
+
+func JWTKeyFunc(token *jwt.Token) (interface{}, error) {
+	return []byte(SignKey), nil
 }
 
 func (j *JWT) CreateToken(claims CustomClaims) (string, error) {
@@ -81,36 +83,4 @@ func (j *JWT) TokenRefresh(tokenString string) (string, error) {
 		return j.CreateToken(*claims)
 	}
 	return "", TokenInvalid
-}
-
-func JWTAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := c.Request.Header.Get("token")
-		if len(token) == 0 {
-			c.JSON(200, gin.H{
-				"status":  -1,
-				"message": "no token",
-			})
-			c.Abort()
-			return
-		}
-		logrus.Info("token:", token)
-
-		j := NewJWT()
-
-		claims, err := j.ParseToken(token)
-		if err != nil {
-			if err == TokenExpired {
-				c.JSON(200, gin.H{
-					"status":  -1,
-					"message": "token expired",
-				})
-				c.Abort()
-				return
-			}
-			c.Abort()
-			return
-		}
-		c.Set("claims", claims)
-	}
 }
